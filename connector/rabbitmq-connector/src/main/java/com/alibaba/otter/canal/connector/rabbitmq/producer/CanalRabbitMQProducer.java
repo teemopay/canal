@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeoutException;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,7 +150,7 @@ public class CanalRabbitMQProducer extends AbstractMQProducer implements CanalMQ
                     .messageTopics(message, destination.getTopic(), destination.getDynamicTopic());
 
                 for (Map.Entry<String, com.alibaba.otter.canal.protocol.Message> entry : messageMap.entrySet()) {
-                    final String topicName = entry.getKey().replace('.', '_');
+                    final String topicName = entry.getKey();//.replace('.', '_');
                     final com.alibaba.otter.canal.protocol.Message messageSub = entry.getValue();
 
                     template.submit(() -> send(destination, topicName, messageSub));
@@ -195,10 +197,17 @@ public class CanalRabbitMQProducer extends AbstractMQProducer implements CanalMQ
         // tips: 目前逻辑中暂不处理对exchange处理，请在Console后台绑定 才可使用routekey
         try {
             RabbitMQProducerConfig rabbitMQProperties = (RabbitMQProducerConfig) this.mqProperties;
+
+            Map<String,Object> headerMap = Maps.newHashMap();
+            if(StringUtils.length(queueName) >= 2){
+                String country = queueName.substring(0, 2);
+                headerMap.put("_country",country);
+            }
+            AMQP.BasicProperties basicProperties = new AMQP.BasicProperties("text/plain", (String) null,headerMap, 2, 0, (String) null, (String) null, (String) null, (String) null, (Date) null, (String) null, (String) null, (String) null, (String) null);
             channel.basicPublish(rabbitMQProperties.getExchange(),
-                queueName,
-                MessageProperties.PERSISTENT_TEXT_PLAIN,
-                message);
+                    queueName,
+                    basicProperties,
+                    message);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
