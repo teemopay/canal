@@ -40,14 +40,11 @@ jobs:
           cache: 'maven'
       - name: Build with Maven if test jdk8
         if: ${{ matrix.java == '8' || matrix.java == '11'}}
-        run: ./mvnw -Pgen-javadoc clean package -B -DskipTests
+        run: ./mvnw clean package -Dmaven.test.skip -Denv=release
         
-      - name: Package the Canal-Server directory
-        run: tar -czvf canal.deployer-1.1.8.tar.gz -C ./deployer/target/canal .  && mv canal.deployer-1.1.8.tar.gz ./docker/
-        working-directory: .
-      - name: Package the Canal-Admin directory
-        run: tar -czvf canal.admin-1.1.8.tar.gz -C ./admin/admin-web/target/canal-admin . && mv canal.admin-1.1.8.tar.gz ./docker/
-        working-directory: .
+      - name: Package the Canal-Server Canal-Admin directory
+        run: mv canal.deployer-1.1.8.tar.gz canal.admin-1.1.8.tar.gz ../docker/
+        working-directory: ./target
 
       - name: Set timestamp variable
         run: echo "TIMESTAMP=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
